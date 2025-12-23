@@ -1,0 +1,9 @@
+# Flask web framework
+Flask==3.0.0
+
+# HTTP requests
+requests==2.31.0
+
+# Data processing (optional, for future enhancements)
+pandas==2.1.4
+matplotlib==3.8.2

@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polymarket Data Processor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: georgia, 'times new roman', times, serif;
+            background: #f7f7f7;
+            min-height: 100vh;
+            padding: 0;
+            color: #121212;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            background: white;
+            border-bottom: 1px solid #121212;
+            border-top: 4px solid #121212;
+            padding: 40px 30px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-family: 'Times New Roman', georgia, serif;
+            font-size: 3em;
+            font-weight: 700;
+            letter-spacing: -1px;
+            margin-bottom: 8px;
+            color: #121212;
+            text-transform: none;
+        }
+
+        .header p {
+            font-family: georgia, 'times new roman', times, serif;
+            font-size: 14px;
+            color: #666;
+            font-style: italic;
+            letter-spacing: 0.3px;
+        }
+
+        .content {
+            padding: 40px 50px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 40px;
+            border-bottom: 1px solid #d4d4d4;
+        }
+
+        .tab {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-family: franklin-gothic-urw, arial, helvetica, sans-serif;
+            color: #666;
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .tab.active {
+            color: #121212;
+            border-bottom-color: #121212;
+        }
+
+        .tab:hover {
+            color: #121212;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            font-family: franklin-gothic-urw, arial, helvetica, sans-serif;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #121212;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="text"], input[type="url"], select, textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #ccc;
+            border-radius: 0;
+            font-size: 15px;
+            font-family: georgia, 'times new roman', times, serif;
+            transition: border-color 0.2s;
+            background: white;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #121212;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 150px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            background: #121212;
+            color: white;
+            border: 2px solid #121212;
+            border-radius: 0;
+            font-size: 13px;
+            font-family: franklin-gothic-urw, arial, helvetica, sans-serif;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: white;
+            color: #121212;
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .btn:disabled:hover {
+            background: #121212;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #121212;
+            border: 1px solid #ccc;
+            margin-left: 10px;
+        }
+
+        .btn-secondary:hover {
+            background: #f7f7f7;
+            border-color: #121212;
+        }
+
+        .result-card {
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            padding: 25px;
+            margin-top: 30px;
+            border-left: 3px solid #121212;
+        }
+
+        .result-card h3 {
+            font-family: 'Times New Roman', georgia, serif;
+            color: #121212;
+            margin-bottom: 20px;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            background: white;
+            padding: 20px;
+            border: 1px solid #d4d4d4;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            font-family: franklin-gothic-urw, arial, helvetica, sans-serif;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-family: 'Times New Roman', georgia, serif;
+            font-weight: 700;
+            color: #121212;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #e0e0e0;
+            border-top: 3px solid #121212;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fff5f5;
+            color: #c00;
+            padding: 20px;
+            margin-top: 20px;
+            border-left: 3px solid #c00;
+            font-family: georgia, 'times new roman', times, serif;
+        }
+
+        .success {
+            background: #f0f8f0;
+            color: #2d5016;
+            padding: 20px;
+            margin-top: 20px;
+            border-left: 3px solid #2d5016;
+            font-family: georgia, 'times new roman', times, serif;
+        }
+
+        .batch-item {
+            background: #fafafa;
+            padding: 18px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #e0e0e0;
+            font-family: georgia, 'times new roman', times, serif;
+        }
+
+        .batch-item.success {
+            background: #f8fdf8;
+            border-left: 3px solid #2d5016;
+        }
+
+        .batch-item.error {
+            background: #fff5f5;
+            border-left: 3px solid #c00;
+        }
+
+        .batch-item.processing {
+            background: #fffef0;
+            border-left: 3px solid #c90;
+        }
+
+        .info-box {
+            background: #f7f7f7;
+            border: 1px solid #d4d4d4;
+            border-left: 3px solid #121212;
+            padding: 20px;
+            margin-bottom: 30px;
+            color: #333;
+            font-family: georgia, 'times new roman', times, serif;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .info-box strong {
+            display: block;
+            margin-bottom: 8px;
+            font-family: franklin-gothic-urw, arial, helvetica, sans-serif;
+            color: #121212;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 3px 8px;
+            font-family: 'Courier New', monospace;
+            border: 1px solid #d4d4d4;
+            font-size: 13px;
+        }
+
+        .batch-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .market-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid #d4d4d4;
+            display: flex;
+            align-items: flex-start;
+            transition: background 0.15s;
+        }
+
+        .market-item:hover {
+            background: #fafafa;
+        }
+
+        .market-item input[type="checkbox"] {
+            margin-right: 15px;
+            margin-top: 6px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #121212;
+        }
+
+        .market-info {
+            flex: 1;
+        }
+
+        .market-title {
+            font-family: georgia, 'times new roman', times, serif;
+            font-weight: 700;
+            color: #121212;
+            margin-bottom: 8px;
+            font-size: 16px;
+            line-height: 1.4;
+        }
+
+        .market-stats {
+            font-size: 12px;
+            font-family: franklin-gothic-urw, arial, helvetica, sans-serif;
+            color: #666;
+            display: flex;
+            gap: 25px;
+        }
+
+        .market-stat {
+            display: flex;
+            align-items: center;
+        }
+
+        .market-stat-label {
+            font-weight: 700;
+            margin-right: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Polymarket Data Fetcher</h1>
+            <p>Fetch Polymarket trading data and generate hypergraphs</p>
+        </div>
+
+        <div class="content">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('single')">Single Market</button>
+                <button class="tab" onclick="switchTab('batch')">Batch Processing</button>
+                <button class="tab" onclick="switchTab('event')">Event Processing</button>
+            </div>
+
+            <!-- Single Market Tab -->
+            <div id="single-tab" class="tab-content active">
+                <div class="info-box">
+                    <strong>How to use:</strong>
+                    Paste a Polymarket market URL or slug. The tool will automatically fetch all raw fills and generate temporal hypergraphs.
+                </div>
+
+                <form id="single-form" onsubmit="processSingleMarket(event)">
+                    <div class="form-group">
+                        <label for="market-url">Polymarket Market URL or Slug</label>
+                        <input
+                            type="text"
+                            id="market-url"
+                            placeholder="https://polymarket.com/event/will-jd-vance-win-the-2028..."
+                            required
+                        >
+                    </div>
+
+                    <button type="submit" class="btn" id="process-btn">Fetch Market Data</button>
+                </form>
+
+                <div id="single-loading" class="loading">
+                    <div class="spinner"></div>
+                    <p>Processing market data... This may take a few minutes.</p>
+                </div>
+
+                <div id="single-result"></div>
+            </div>
+
+            <!-- Batch Processing Tab -->
+            <div id="batch-tab" class="tab-content">
+                <div class="info-box">
+                    <strong>Batch Processing:</strong>
+                    Enter multiple market URLs (one per line).
+                    <br><br>
+                    Example:<br>
+                    <code>https://polymarket.com/event/...</code><br>
+                    <code>will-trump-win-2024</code>
+                </div>
+
+                <form id="batch-form" onsubmit="processBatchMarkets(event)">
+                    <div class="form-group">
+                        <label for="batch-urls">Market URLs (one per line)</label>
+                        <textarea
+                            id="batch-urls"
+                            placeholder="https://polymarket.com/event/...
+will-trump-win-2024
+https://polymarket.com/event/..."
+                            required
+                        ></textarea>
+                    </div>
+
+                    <button type="submit" class="btn" id="batch-btn">Process All Markets</button>
+                    <button type="button" class="btn btn-secondary" onclick="clearBatchResults()">Clear Results</button>
+                </form>
+
+                <div id="batch-loading" class="loading">
+                    <div class="spinner"></div>
+                    <p>Processing markets... This may take several minutes.</p>
+                </div>
+
+                <div id="batch-results" class="batch-list"></div>
+            </div>
+
+            <!-- Event Processing Tab -->
+            <div id="event-tab" class="tab-content">
+                <div class="info-box">
+                    <strong>Event Processing:</strong>
+                    Enter a Polymarket event URL to fetch all markets. Preview the markets,
+                    select which ones to process, or use "Top 10 by Volume" to auto-select.
+                    <br><br>
+                    Example: <code>https://polymarket.com/events/republican-presidential-nominee-2028</code>
+                </div>
+
+                <!-- Step 1: Fetch Event -->
+                <form id="event-fetch-form" onsubmit="fetchEvent(event)">
+                    <div class="form-group">
+                        <label for="event-url">Polymarket Event URL or Slug</label>
+                        <input type="text" id="event-url"
+                               placeholder="https://polymarket.com/events/republican-presidential-nominee-2028"
+                               required>
+                    </div>
+                    <button type="submit" class="btn" id="fetch-event-btn">Fetch Event</button>
+                </form>
+
+                <div id="event-fetch-loading" class="loading">
+                    <div class="spinner"></div>
+                    <p>Fetching event data...</p>
+                </div>
+
+                <!-- Step 2: Preview & Select Markets (hidden until event fetched) -->
+                <div id="event-preview" style="display: none;">
+                    <div class="result-card">
+                        <h3 id="event-title"></h3>
+                        <p id="event-description"></p>
+                        <p><strong>Total Markets:</strong> <span id="event-market-count"></span></p>
+                    </div>
+
+                    <!-- Market Search/Filter -->
+                    <div class="form-group">
+                        <label for="market-search">Search Markets</label>
+                        <input type="text" id="market-search"
+                               placeholder="Filter by market name..."
+                               oninput="filterMarkets()">
+                    </div>
+
+                    <!-- Selection Controls -->
+                    <div style="margin-bottom: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn btn-secondary" onclick="selectTopByVolume()">
+                            Select Top 10 by Volume
+                        </button>
+                        <button class="btn btn-secondary" onclick="selectAll()">
+                            Select All
+                        </button>
+                        <button class="btn btn-secondary" onclick="deselectAll()">
+                            Deselect All
+                        </button>
+                        <span style="margin-left: auto; padding: 10px; color: #666;">
+                            <span id="selected-count">0</span> selected
+                        </span>
+                    </div>
+
+                    <!-- Markets List -->
+                    <div id="markets-list" style="max-height: 500px; overflow-y: auto;
+                                                  background: #f8f9fa; padding: 15px;
+                                                  border-radius: 6px;">
+                        <!-- Will be populated with market checkboxes -->
+                    </div>
+
+                    <!-- Process Button -->
+                    <button class="btn" id="process-event-btn"
+                            onclick="processSelectedMarkets()"
+                            style="margin-top: 20px;" disabled>
+                        Process Selected Markets
+                    </button>
+                </div>
+
+                <div id="event-processing-loading" class="loading">
+                    <div class="spinner"></div>
+                    <p id="processing-status">Processing markets... This may take several minutes.</p>
+                </div>
+
+                <div id="event-results" class="batch-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName + '-tab').classList.add('active');
+        }
+
+        async function processSingleMarket(event) {
+            event.preventDefault();
+
+            const marketUrl = document.getElementById('market-url').value;
+            const resultDiv = document.getElementById('single-result');
+            const loadingDiv = document.getElementById('single-loading');
+            const btn = document.getElementById('process-btn');
+
+            // Clear previous results
+            resultDiv.innerHTML = '';
+            loadingDiv.classList.add('active');
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/process', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        market_url: marketUrl
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    displaySingleResult(result.data);
+                } else {
+                    resultDiv.innerHTML = `<div class="error"><strong>Error:</strong> ${result.error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><strong>Error:</strong> ${error.message}</div>`;
+            } finally {
+                loadingDiv.classList.remove('active');
+                btn.disabled = false;
+            }
+        }
+
+        function displaySingleResult(data) {
+            const resultDiv = document.getElementById('single-result');
+
+            // Build hypergraph stats section if available
+            let hypergraphSection = '';
+            if (data.hypergraph || data.unified_hypergraph) {
+                hypergraphSection = '<h4 style="margin-top: 30px; margin-bottom: 15px; font-size: 18px;">Temporal Hypergraph</h4>';
+
+                if (data.hypergraph) {
+                    hypergraphSection += `
+                        <p style="margin-bottom: 10px;"><strong>Market Hypergraph:</strong></p>
+                        <div class="stat-grid">
+                            <div class="stat-item">
+                                <div class="stat-label">Nodes (Traders)</div>
+                                <div class="stat-value">${data.hypergraph.nodes.toLocaleString()}</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Hyperedges</div>
+                                <div class="stat-value">${data.hypergraph.hyperedges.toLocaleString()}</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Vertex Occurrences</div>
+                                <div class="stat-value">${data.hypergraph.total_vertex_occurrences.toLocaleString()}</div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                if (data.unified_hypergraph) {
+                    hypergraphSection += `
+                        <p style="margin-top: 20px; margin-bottom: 10px;"><strong>Unified Hypergraph (All Markets):</strong></p>
+                        <div class="stat-grid">
+                            <div class="stat-item">
+                                <div class="stat-label">Total Nodes</div>
+                                <div class="stat-value">${data.unified_hypergraph.nodes.toLocaleString()}</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Total Hyperedges</div>
+                                <div class="stat-value">${data.unified_hypergraph.hyperedges.toLocaleString()}</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Markets</div>
+                                <div class="stat-value">${data.unified_hypergraph.markets_count}</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            const html = `
+                <div class="result-card">
+                    <h3>✓ Fetch Complete</h3>
+                    <p><strong>Market:</strong> ${data.market_title}</p>
+                    <p><strong>Slug:</strong> ${data.market_slug}</p>
+
+                    <h4 style="margin-top: 20px; margin-bottom: 15px; font-size: 18px;">Fill Statistics</h4>
+                    <div class="stat-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Total Fills</div>
+                            <div class="stat-value">${data.total_fills.toLocaleString()}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Unique Traders</div>
+                            <div class="stat-value">${data.unique_traders.toLocaleString()}</div>
+                        </div>
+                    </div>
+
+                    ${hypergraphSection}
+
+                    <div style="margin-top: 20px;">
+                        <p><strong>Timestamp Range:</strong></p>
+                        <p>From: ${new Date(data.timestamp_range.start * 1000).toLocaleString()}</p>
+                        <p>To: ${new Date(data.timestamp_range.end * 1000).toLocaleString()}</p>
+                    </div>
+
+                    <div style="margin-top: 20px; padding: 15px; background: white; border-radius: 6px;">
+                        <p><strong>Raw Fills:</strong></p>
+                        <code style="display: block; margin-top: 5px; word-break: break-all;">${data.raw_fills_path}</code>
+                    </div>
+                </div>
+            `;
+
+            resultDiv.innerHTML = html;
+        }
+
+        async function processBatchMarkets(event) {
+            event.preventDefault();
+
+            const batchUrlsText = document.getElementById('batch-urls').value;
+            const resultsDiv = document.getElementById('batch-results');
+            const loadingDiv = document.getElementById('batch-loading');
+            const btn = document.getElementById('batch-btn');
+
+            // Parse batch URLs
+            const lines = batchUrlsText.split('\n').filter(line => line.trim());
+            const markets = lines.map(line => {
+                return {
+                    url: line.trim()
+                };
+            });
+
+            // Clear previous results
+            resultsDiv.innerHTML = '';
+            loadingDiv.classList.add('active');
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/process-batch', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ markets: markets })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    displayBatchResults(result.results);
+                } else {
+                    resultsDiv.innerHTML = `<div class="error"><strong>Error:</strong> ${result.error}</div>`;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error"><strong>Error:</strong> ${error.message}</div>`;
+            } finally {
+                loadingDiv.classList.remove('active');
+                btn.disabled = false;
+            }
+        }
+
+        function displayBatchResults(results) {
+            const resultsDiv = document.getElementById('batch-results');
+
+            let html = '<h3 style="margin-bottom: 15px;">Batch Processing Results</h3>';
+
+            results.forEach((result, index) => {
+                const statusClass = result.success ? 'success' : 'error';
+                const icon = result.success ? '✓' : '✗';
+
+                if (result.success) {
+                    let hypergraphInfo = '';
+                    if (result.data.hypergraph) {
+                        hypergraphInfo = ` | ${result.data.hypergraph.hyperedges} hyperedges`;
+                    }
+
+                    html += `
+                        <div class="batch-item ${statusClass}">
+                            <div>
+                                <strong>${icon} ${result.data.market_slug}</strong><br>
+                                <small>${result.data.total_fills.toLocaleString()} fills, ${result.data.unique_traders.toLocaleString()} traders${hypergraphInfo}</small>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="batch-item ${statusClass}">
+                            <div>
+                                <strong>${icon} ${result.url}</strong><br>
+                                <small style="color: #c33;">${result.error}</small>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            // Add summary
+            const successCount = results.filter(r => r.success).length;
+            const totalCount = results.length;
+            html += `
+                <div class="result-card" style="margin-top: 20px;">
+                    <h3>Summary</h3>
+                    <p>Successfully processed: ${successCount} / ${totalCount} markets</p>
+                </div>
+            `;
+
+            resultsDiv.innerHTML = html;
+        }
+
+        function clearBatchResults() {
+            document.getElementById('batch-results').innerHTML = '';
+            document.getElementById('batch-urls').value = '';
+        }
+
+        // Event Processing Functions
+        let eventData = null;
+        let allMarkets = [];
+        let selectedMarketSlugs = new Set();
+
+        async function fetchEvent(event) {
+            event.preventDefault();
+
+            const eventUrl = document.getElementById('event-url').value;
+            const loadingDiv = document.getElementById('event-fetch-loading');
+            const previewDiv = document.getElementById('event-preview');
+            const btn = document.getElementById('fetch-event-btn');
+
+            // Reset state
+            eventData = null;
+            allMarkets = [];
+            selectedMarketSlugs.clear();
+            previewDiv.style.display = 'none';
+            loadingDiv.classList.add('active');
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/fetch-event', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ event_url: eventUrl })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    eventData = result.event;
+                    allMarkets = result.markets;
+                    displayEventPreview(result.event, result.markets);
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                loadingDiv.classList.remove('active');
+                btn.disabled = false;
+            }
+        }
+
+        function displayEventPreview(event, markets) {
+            // Populate event info
+            document.getElementById('event-title').textContent = event.title;
+            document.getElementById('event-description').textContent = event.description;
+            document.getElementById('event-market-count').textContent = event.total_markets;
+
+            // Render markets list (already sorted by volume)
+            renderMarketsList(markets);
+
+            // Show preview section
+            document.getElementById('event-preview').style.display = 'block';
+        }
+
+        function renderMarketsList(markets) {
+            const listDiv = document.getElementById('markets-list');
+
+            let html = '';
+            markets.forEach((market, index) => {
+                const volumeFormatted = parseFloat(market.volume).toLocaleString(undefined,
+                    {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                const liquidityFormatted = parseFloat(market.liquidity).toLocaleString(undefined,
+                    {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+                html += `
+                    <div class="market-item" data-slug="${market.slug}" data-question="${market.question.toLowerCase()}">
+                        <input type="checkbox"
+                               id="market-${index}"
+                               value="${market.slug}"
+                               onchange="updateSelectedCount()">
+                        <div class="market-info">
+                            <div class="market-title">${market.question}</div>
+                            ${market.groupItemTitle ? `<div style="font-size: 12px; color: #888; margin-bottom: 4px;">${market.groupItemTitle}</div>` : ''}
+                            <div class="market-stats">
+                                <div class="market-stat">
+                                    <span class="market-stat-label">Volume:</span>
+                                    <span>$${volumeFormatted}</span>
+                                </div>
+                                <div class="market-stat">
+                                    <span class="market-stat-label">Liquidity:</span>
+                                    <span>$${liquidityFormatted}</span>
+                                </div>
+                                ${market.lastTradePrice && market.lastTradePrice !== '0' && market.lastTradePrice !== '' ? `
+                                <div class="market-stat">
+                                    <span class="market-stat-label">Price:</span>
+                                    <span>${(parseFloat(market.lastTradePrice) * 100).toFixed(1)}¢</span>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            listDiv.innerHTML = html;
+            updateSelectedCount();
+        }
+
+        function filterMarkets() {
+            const searchTerm = document.getElementById('market-search').value.toLowerCase();
+            const marketItems = document.querySelectorAll('.market-item');
+
+            marketItems.forEach(item => {
+                const question = item.getAttribute('data-question');
+                if (question.includes(searchTerm)) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        function selectTopByVolume() {
+            // Markets are already sorted by volume descending
+            const checkboxes = document.querySelectorAll('#markets-list input[type="checkbox"]');
+            const visibleCheckboxes = Array.from(checkboxes).filter(cb =>
+                cb.closest('.market-item').style.display !== 'none'
+            );
+
+            // Deselect all first
+            checkboxes.forEach(cb => cb.checked = false);
+
+            // Select top 10 (or fewer if less than 10 available)
+            const topN = Math.min(10, visibleCheckboxes.length);
+            for (let i = 0; i < topN; i++) {
+                visibleCheckboxes[i].checked = true;
+            }
+
+            updateSelectedCount();
+        }
+
+        function selectAll() {
+            const checkboxes = document.querySelectorAll('#markets-list input[type="checkbox"]');
+            checkboxes.forEach(cb => {
+                if (cb.closest('.market-item').style.display !== 'none') {
+                    cb.checked = true;
+                }
+            });
+            updateSelectedCount();
+        }
+
+        function deselectAll() {
+            const checkboxes = document.querySelectorAll('#markets-list input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = false);
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            const checkboxes = document.querySelectorAll('#markets-list input[type="checkbox"]:checked');
+            const count = checkboxes.length;
+
+            document.getElementById('selected-count').textContent = count;
+            document.getElementById('process-event-btn').disabled = count === 0;
+
+            // Update selectedMarketSlugs Set
+            selectedMarketSlugs.clear();
+            checkboxes.forEach(cb => selectedMarketSlugs.add(cb.value));
+        }
+
+        async function processSelectedMarkets() {
+            const loadingDiv = document.getElementById('event-processing-loading');
+            const resultsDiv = document.getElementById('event-results');
+            const btn = document.getElementById('process-event-btn');
+
+            resultsDiv.innerHTML = '';
+            loadingDiv.classList.add('active');
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/process-event', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        event_slug: eventData.slug,
+                        market_slugs: Array.from(selectedMarketSlugs)
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    displayEventResults(result.results);
+                } else {
+                    resultsDiv.innerHTML = `<div class="error"><strong>Error:</strong> ${result.error}</div>`;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error"><strong>Error:</strong> ${error.message}</div>`;
+            } finally {
+                loadingDiv.classList.remove('active');
+                btn.disabled = false;
+            }
+        }
+
+        function displayEventResults(results) {
+            const resultsDiv = document.getElementById('event-results');
+
+            let html = '<h3 style="margin-bottom: 15px;">Event Processing Results</h3>';
+
+            results.forEach(result => {
+                const statusClass = result.success ? 'success' : 'error';
+                const icon = result.success ? '✓' : '✗';
+
+                if (result.success) {
+                    html += `
+                        <div class="batch-item ${statusClass}">
+                            <div>
+                                <strong>${icon} ${result.data.market_slug}</strong><br>
+                                <small>${result.data.market_title}</small><br>
+                                <small>${result.data.total_fills.toLocaleString()} fills,
+                                       ${result.data.unique_traders.toLocaleString()} traders</small>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="batch-item ${statusClass}">
+                            <div>
+                                <strong>${icon} ${result.slug}</strong><br>
+                                <small style="color: #c33;">${result.error}</small>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            // Summary
+            const successCount = results.filter(r => r.success).length;
+            const totalCount = results.length;
+            html += `
+                <div class="result-card" style="margin-top: 20px;">
+                    <h3>Summary</h3>
+                    <p>Successfully processed: ${successCount} / ${totalCount} markets</p>
+                </div>
+            `;
+
+            resultsDiv.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
